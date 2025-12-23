@@ -28,7 +28,7 @@ The system relies on a `data.json` file to populate the product list. The file m
         }
     ]
 }
-
+```
 
 # SpareFlow: Intelligent Spare Parts Quotation System
 
@@ -60,6 +60,7 @@ The system relies on a `data.json` file to populate the product list. The file m
         }
     ]
 }
+```
 
 🛠️ Field Definitions:
 sku: The unique part number used for identification and normalization.
@@ -85,3 +86,4 @@ PDF Engine: html2pdf.js for high-fidelity HTML-to-PDF conversion.
 Contributions are welcome! If you have ideas for improved billing features, VAT support, or external API integrations, feel free to fork the repository and submit a Pull Request.
 
 Note: This project was developed to provide a fast, professional, and free tool for small to medium-sized businesses to organize their quotation workflow.
+
