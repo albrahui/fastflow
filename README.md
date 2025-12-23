@@ -30,11 +30,6 @@ The system relies on a `data.json` file to populate the product list. The file m
 }
 
 
-
-Here is the complete SpareFlow project documentation formatted as a raw Markdown file. You can copy this directly into your README.md for your GitHub repository.
-
-Markdown
-
 # SpareFlow: Intelligent Spare Parts Quotation System
 
 **SpareFlow** is an open-source, lightweight, browser-based application designed to help spare parts retailers and automotive workshops generate professional quotations for their clients with high speed and accuracy. It processes thousands of products locally and generates organized, multi-page PDF documents optimized for A4 printing.
@@ -65,6 +60,7 @@ The system relies on a `data.json` file to populate the product list. The file m
         }
     ]
 }
+
 🛠️ Field Definitions:
 sku: The unique part number used for identification and normalization.
 name: The description that appears on the client's quotation.
