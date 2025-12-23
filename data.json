@@ -1,0 +1,12 @@
+{
+    "data": [
+        {
+            "id": 12345,
+            "sku": "PART-NUMBER-001",
+            "name": "Product Description Name",
+            "price": 150.00,
+            "quantity": 10,
+            "is_available": true
+        }
+    ]
+}

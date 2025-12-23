@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Euro Cars - نظام عروض الأسعار</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        body { background-color: #f8f9fa; font-family: 'Segoe UI', Tahoma, sans-serif; }
+        .control-panel { background: #fff; padding: 20px; border-bottom: 3px solid #d32f2f; }
+        .pdf-page {
+            background: white;
+            width: 210mm;
+            padding: 15mm;
+            margin: 10px auto;
+            position: relative;
+            box-sizing: border-box;
+        }
+        .logo-img { width: 300px; height: auto; }
+        .table-pdf { width: 100%; border-collapse: collapse; font-size: 14px; margin-bottom: 10px; }
+        .table-pdf th { background-color: #212529 !important; color: white !important; padding: 8px; text-align: center; border: 1px solid #000; }
+        .table-pdf td { padding: 8px; border: 1px solid #dee2e6; text-align: center; }
+        .search-results { position: absolute; width: 100%; z-index: 2000; background: white; border: 1px solid #ddd; max-height: 250px; overflow-y: auto; }
+        .page-break { page-break-after: always; }
+    </style>
+</head>
+<body>
+
+<div class="control-panel d-print-none shadow-sm">
+    <div class="container-fluid">
+        <div class="row g-2 align-items-end">
+            <div class="col-md-2">
+                <input type="text" id="cInput" class="form-control form-control-sm" placeholder="اسم العميل">
+            </div>
+            <div class="col-md-2">
+                <input type="text" id="phoneInput" class="form-control form-control-sm" placeholder="رقم جوال العميل">
+            </div>
+            <div class="col-md-5 position-relative">
+                <input type="text" id="pSearch" class="form-control form-control-sm border-danger" placeholder="ابحث (SKU أو الاسم)...">
+                <div id="pResults" class="search-results shadow" style="display:none;">
+                    <table class="table table-sm table-hover mb-0">
+                        <tbody id="pBody"></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="col-md-3 text-end">
+                <button class="btn btn-danger btn-sm fw-bold w-100" onclick="generatePDF()">حفظ كملف PDF</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="previewArea" class="container mt-4">
+    <center><h5 class="text-muted border-bottom pb-2">عرض السعر</h5></center>
+    <div id="renderTarget"></div>
+</div>
+
+<div id="pdfTemplate" style="display:none;"></div>
+
+<script>
+    let products = [];
+    let cart = [];
+    const normalize = (s) => s ? s.toString().replace(/[\s\/\-]/g, '').toUpperCase() : "";
+
+    window.onload = () => {
+        fetch('data.json').then(r => r.json()).then(j => { products = j.data; });
+        updatePreview();
+    };
+
+    document.getElementById('pSearch').oninput = (e) => {
+        const val = e.target.value;
+        const nVal = normalize(val);
+        const res = document.getElementById('pResults');
+        const body = document.getElementById('pBody');
+        if(nVal.length < 3) { res.style.display='none'; return; }
+
+        const found = products.filter(p => (normalize(p.sku).includes(nVal) || p.name.includes(val)) && p.quantity > 0).slice(0, 10);
+        if(found.length > 0) {
+            res.style.display='block';
+            body.innerHTML = found.map(p => `
+                <tr style="cursor:pointer" onclick="addItem(${p.id})">
+                    <td><small>${p.name}</small></td>
+                    <td class="fw-bold text-danger" dir="ltr">${p.sku}</td>
+                </tr>
+            `).join('');
+        } else { res.style.display='none'; }
+    };
+
+    function addItem(id) {
+        if(cart.some(i => i.id == id)) return alert("موجود مسبقاً");
+        const p = products.find(x => x.id == id);
+        if(p) { cart.push(p); updatePreview(); document.getElementById('pResults').style.display='none'; document.getElementById('pSearch').value = ''; }
+    }
+
+    function updatePreview() {
+        const target = document.getElementById('renderTarget');
+        if(cart.length === 0) { target.innerHTML = '<p class="text-center py-5 text-muted">لم يتم إضافة قطع بعد.</p>'; return; }
+
+        let html = '<table class="table table-bordered bg-white shadow-sm"><thead><tr><th>SKU</th><th>الاسم</th><th>السعر</th><th></th></tr></thead><tbody>';
+        let total = 0;
+        cart.forEach((item, i) => {
+            total += item.price;
+            html += `<tr><td dir="ltr">${item.sku}</td><td>${item.name}</td><td>${item.price}</td><td><button class="btn btn-sm text-danger" onclick="cart.splice(${i},1);updatePreview()">✕</button></td></tr>`;
+        });
+        html += `</tbody><tfoot><tr class="table-light"><td colspan="2" class="text-end fw-bold">الإجمالي:</td><td colspan="2" class="fw-bold text-danger">${total} ريال</td></tr></tfoot></table>`;
+        target.innerHTML = html;
+    }
+
+    function generatePDF() {
+        if(cart.length === 0) return alert("أضف منتجات أولاً");
+
+        const template = document.getElementById('pdfTemplate');
+        template.style.display = 'block';
+        template.innerHTML = '';
+
+        const client = document.getElementById('cInput').value || '---';
+        const phone = document.getElementById('phoneInput').value || '---';
+        const qId = 'EC-' + Math.floor(Math.random()*900000+100000);
+        const qDate = new Date().toLocaleDateString('ar-SA');
+
+        const chunks = [];
+        for (let i = 0; i < cart.length; i += 20) {
+            chunks.push(cart.slice(i, i + 20));
+        }
+
+        let totalSum = 0;
+        cart.forEach(item => totalSum += item.price);
+
+        chunks.forEach((chunk, index) => {
+            const isFirst = (index === 0);
+            const isLast = (index === chunks.length - 1);
+
+            let pageHtml = `<div class="pdf-page ${!isLast ? 'page-break' : ''}">`;
+
+            if(isFirst) {
+                pageHtml += `
+                    <div class="d-flex justify-content-between align-items-start mb-4 border-bottom pb-2">
+                        <img src="https://placehold.co/600x400/EEE/31343C" class="logo-img">
+                        <div class="text-start">
+                            <br>
+                            <center> <h6 style="margin:0px; padding:0px;">عرض السعر</h6> </center>
+                            <small style="margin:0px; padding:0px;">التاريخ: ${qDate}</small>
+                        </div>
+                     </div>
+                    <div class="row mb-1 small">
+                        <div class="col-4"><strong>اسم العميل</strong></div>
+                        <div class="col-4"><strong>${client}</strong></div>
+                        <div class="col-4">المحترم</div>
+                    </div>
+                    <div class="row mb-3 small">
+                        <div class="col-4"><strong>رقم الجوال</strong></div>
+                        <div class="col-4"><strong>${phone}</strong></div>
+                    </div>
+                `;
+            } else {
+                pageHtml += `<div class="text-center mb-3 border-bottom pb-1"><small class="text-muted">عرض سعر ${qId} - صفحة ${index + 1}</small></div>`;
+            }
+
+            pageHtml += `<table class="table-pdf"><thead><tr><th>رقم القطعة (SKU)</th><th>اسم المنتج والوصف</th><th>السعر (ريال)</th></tr></thead><tbody>`;
+            chunk.forEach(item => {
+                pageHtml += `<tr><td class="fw-bold" dir="ltr">${item.sku}</td><td style="text-align:right">${item.name}</td><td>${item.price}</td></tr>`;
+            });
+            pageHtml += `</tbody></table>`;
+
+            if(isLast) {
+                pageHtml += `
+                    <div class="row mt-4 g-3 align-items-start">
+                        <div class="col-7 text-start">
+                            <div class="p-1 border rounded bg-light small text-muted" style="min-height:60px; white-space: pre-wrap;">مدة العرض 3 ايام فقط</div>
+                        </div>
+                        <div class="col-5">
+                            <div class="p-1 border border-danger border-2 rounded text-center bg-white shadow-sm">
+                                <small class="text-muted d-block mb-1">الإجمالي الكلي المستحق</small>
+                                <h3 class="text-danger fw-bold mb-0">${totalSum} ريال</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-5 pt-4 border-top text-center">
+                        <div class="d-flex justify-content-around align-items-center flex-wrap small text-muted">
+                            <div class="mx-2"><strong>| واتساب</strong> 0000000000</div>
+                            <div class="mx-2"><strong>| الموقع الالكتروني</strong> WWW....COM</div>
+                            <div class="mx-2"><strong>| العنوان</strong> ...</div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            pageHtml += `</div>`;
+            template.innerHTML += pageHtml;
+        });
+
+        const opt = {
+            margin: 0,
+            filename: `EuroCars_${qId}.pdf`,
+            image: { type: 'jpeg', quality: 1 },
+            html2canvas: { scale: 3, useCORS: true, width: 793 },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+
+        html2pdf().set(opt).from(template).save().then(() => {
+            template.style.display = 'none';
+        });
+    }
+</script>
+</body>
+</html>
