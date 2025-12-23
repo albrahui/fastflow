@@ -11,41 +11,11 @@
 * **Privacy-Focused Output:** Designed to show only essential client details (Name and Phone) while excluding internal data from the final printed version.
 * **Zero-Backend Architecture:** Runs entirely in the browser using Vanilla JavaScript—no database or complex server installation required.
 
-## 📂 Data Structure (`data.json`)
-
-The system relies on a `data.json` file to populate the product list. The file must follow this structure to ensure all features function correctly:
-
-```json
-{
-    "data": [
-        {
-            "id": 12345,
-            "sku": "000 000 00 00",
-            "name": "Product name or spare part description",
-            "price": 150,
-            "quantity": 10,
-            "is_available": true
-        }
-    ]
-}
-```
-
-# SpareFlow: Intelligent Spare Parts Quotation System
-
-**SpareFlow** is an open-source, lightweight, browser-based application designed to help spare parts retailers and automotive workshops generate professional quotations for their clients with high speed and accuracy. It processes thousands of products locally and generates organized, multi-page PDF documents optimized for A4 printing.
-
-## ✨ Key Features
-
-* **Ultra-Fast Real-Time Search:** Instantly filter products by SKU or Name as you type.
-* **Advanced SKU Normalization:** A smart algorithm that ignores spaces, slashes, and hyphens during searches, ensuring you find the right part regardless of how the number is formatted.
-* **Smart Pagination:** Automatically distributes products into multiple pages at a rate of **20 items per page**, keeping headers and footers perfectly aligned.
-* **Inventory Integration:** The system automatically skips any product where the available `quantity` is 0.
-* **Privacy-Focused Output:** Designed to show only essential client details (Name and Phone) while excluding internal data from the final printed version.
-* **Zero-Backend Architecture:** Runs entirely in the browser using Vanilla JavaScript—no database or complex server installation required.
+---
 
 ## 📂 Data Structure (`data.json`)
 
-The system relies on a `data.json` file to populate the product list. The file must follow this structure to ensure all features function correctly:
+The system relies on a `data.json` file to populate the product list. The file must follow this structure:
 
 ```json
 {
@@ -86,4 +56,3 @@ PDF Engine: html2pdf.js for high-fidelity HTML-to-PDF conversion.
 Contributions are welcome! If you have ideas for improved billing features, VAT support, or external API integrations, feel free to fork the repository and submit a Pull Request.
 
 Note: This project was developed to provide a fast, professional, and free tool for small to medium-sized businesses to organize their quotation workflow.
-
